@@ -1,3 +1,10 @@
-from django.shortcuts import render
+from django.views.generic import ListView
+from .models import Post
 
-# Create your views here.
+
+class HomePostListView(ListView):
+    context_object_name = 'posts'
+    template_name = 'home.html'
+
+    def get_queryset(self):
+        return Post.objects.filter(status=Post.Status.PUBLISHED)
