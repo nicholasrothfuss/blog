@@ -19,6 +19,11 @@ class Category(models.Model):
         return reverse('category_archive', kwargs={'slug': self.slug})
 
 
+class PostQuerySet(models.QuerySet):
+    def published(self):
+        return self.filter(status=Post.Status.PUBLISHED)
+
+
 class Post(models.Model):
     """Model representing a post to the blog."""
     class Status(models.IntegerChoices):
@@ -34,6 +39,8 @@ class Post(models.Model):
     status = models.SmallIntegerField(choices=Status.choices, default=Status.DRAFT)
     published_at = models.DateTimeField(editable=False, null=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    objects = PostQuerySet.as_manager()
 
     class Meta:
         ordering = ('-published_at',)
