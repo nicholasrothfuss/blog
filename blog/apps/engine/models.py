@@ -4,6 +4,21 @@ from django.urls import reverse
 from django.utils import timezone
 
 
+class Category(models.Model):
+    name = models.CharField(max_length=200, unique=True)
+    slug = models.SlugField(unique=True)
+
+    class Meta:
+        ordering = ('name',)
+        verbose_name_plural = 'categories'
+
+    def __str__(self):
+        return self.name
+
+    def get_absolute_url(self):
+        return reverse('category_archive', kwargs={'slug': self.slug})
+
+
 class Post(models.Model):
     """Model representing a post to the blog."""
     class Status(models.IntegerChoices):
@@ -14,6 +29,7 @@ class Post(models.Model):
     author = models.ForeignKey(User, on_delete=models.CASCADE, editable=False)
     title = models.CharField(max_length=200)
     slug = models.SlugField()
+    categories = models.ManyToManyField(Category, blank=True, related_name='posts')
     content = models.TextField()
     status = models.SmallIntegerField(choices=Status.choices, default=Status.DRAFT)
     published_at = models.DateTimeField(editable=False, null=True)

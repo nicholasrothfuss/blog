@@ -4,7 +4,7 @@ from django.utils import timezone
 from model_bakery import baker
 import pytest
 from pytest_django.asserts import assertTemplateUsed
-from .models import Post
+from .models import Category, Post
 
 
 _ONE_DAY_AGO = timezone.now() - timedelta(days=1)
@@ -21,6 +21,8 @@ def post_factory(author):
         def __init__(self, author):
             self._author = author
         def create(self, **kwargs):
+            kwargs.setdefault('status', Post.Status.PUBLISHED)
+            kwargs.setdefault('published_at', _ONE_DAY_AGO)
             return baker.make(Post, author=self._author, **kwargs)
     return _Factory(author)
 
@@ -51,6 +53,15 @@ def test_permalink_view(client, post_factory):
     response = client.get(post.get_absolute_url())
     assert response.status_code == 200
     assertTemplateUsed(response, 'permalink.html')
+
+
+@pytest.mark.django_db
+def test_category_archive_view(client, post_factory):
+    category = baker.make(Category)
+    post = post_factory.create(categories=[category])
+    response = client.get(category.get_absolute_url())
+    assert response.status_code == 200
+    assertTemplateUsed(response, 'category_archive.html')
 
 
 #-----------------#

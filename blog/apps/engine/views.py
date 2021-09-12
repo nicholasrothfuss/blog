@@ -1,5 +1,20 @@
+from django.shortcuts import get_object_or_404
 from django.views.generic import ListView, DateDetailView
-from .models import Post
+from .models import Category, Post
+
+
+class CategoryArchiveView(ListView):
+    context_object_name = 'posts'
+    template_name = 'category_archive.html'
+
+    def get_queryset(self):
+        self.category = get_object_or_404(Category, slug=self.kwargs['slug'])
+        return self.category.posts.filter(status=Post.Status.PUBLISHED)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['category'] = self.category
+        return context
 
 
 class HomePostListView(ListView):
@@ -7,7 +22,7 @@ class HomePostListView(ListView):
     template_name = 'home.html'
 
     def get_queryset(self):
-        return Post.objects.filter(status=Post.Status.PUBLISHED)
+        return Post.objects.filter(status=Post.Status.PUBLISHED).prefetch_related('categories')
 
 
 class PermalinkView(DateDetailView):

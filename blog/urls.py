@@ -8,6 +8,11 @@ urlpatterns = [
         core_views.PermalinkView.as_view(), 
         name='permalink'
     ),
+    path(
+        'categories/<slug:slug>/', 
+        core_views.CategoryArchiveView.as_view(), 
+        name='category_archive'
+    ),
     path('admin/', admin.site.urls),
     path('', core_views.HomePostListView.as_view(), name='home'),
 ]

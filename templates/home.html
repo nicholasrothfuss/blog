@@ -7,6 +7,14 @@
     {% for post in posts %}
         <h2>{{ post.title }}</h2>
         {{ post.content|linebreaks }}
+        <p>
+            Posted in 
+            {% for category in post.categories.all %}
+                <a href="{{ category.get_absolute_url }}">{{ category }}</a>
+            {% empty %}
+                Uncategorized
+            {% endfor %}
+        </p>
         <p><a href="{{ post.get_absolute_url }}">Permalink</a></p>
     {% endfor %}
 </body>
