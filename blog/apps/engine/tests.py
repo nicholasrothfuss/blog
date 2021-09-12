@@ -15,6 +15,16 @@ def author():
     return baker.make(User)
 
 
+@pytest.fixture
+def post_factory(author):
+    class _Factory:
+        def __init__(self, author):
+            self._author = author
+        def create(self, **kwargs):
+            return baker.make(Post, author=self._author, **kwargs)
+    return _Factory(author)
+
+
 def _create_then_fetch(model_cls, **kwargs):
     obj = baker.make(model_cls, **kwargs)
     return model_cls.objects.get(pk=obj.pk)
@@ -33,6 +43,14 @@ def test_home_view(client):
     response = client.get('/')
     assert response.status_code == 200
     assertTemplateUsed(response, 'home.html')
+
+
+@pytest.mark.django_db
+def test_permalink_view(client, post_factory):
+    post = post_factory.create(status=Post.Status.PUBLISHED, published_at=_ONE_DAY_AGO)
+    response = client.get(post.get_absolute_url())
+    assert response.status_code == 200
+    assertTemplateUsed(response, 'permalink.html')
 
 
 #-----------------#

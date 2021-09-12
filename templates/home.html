@@ -7,6 +7,7 @@
     {% for post in posts %}
         <h2>{{ post.title }}</h2>
         {{ post.content|linebreaks }}
+        <p><a href="{{ post.get_absolute_url }}">Permalink</a></p>
     {% endfor %}
 </body>
 </html>

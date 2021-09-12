@@ -1,5 +1,6 @@
 from django.contrib.auth.models import User
 from django.db import models
+from django.urls import reverse
 from django.utils import timezone
 
 
@@ -23,6 +24,20 @@ class Post(models.Model):
 
     def __str__(self):
         return self.title
+
+    def get_absolute_url(self):
+        if self.published_at is None:
+            raise NotImplementedError('TODO')
+            
+        return reverse(
+            'permalink',
+            kwargs={
+                'year': self.published_at.strftime('%Y'),
+                'month': self.published_at.strftime('%m'),
+                'day': self.published_at.strftime('%d'),
+                'slug': self.slug,
+            }
+        )
 
     @property
     def is_draft(self):
