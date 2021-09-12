@@ -20,16 +20,19 @@ def post_factory(author):
     class _Factory:
         def __init__(self, author):
             self._author = author
-        def create(self, **kwargs):
+        def create(self, *, _save=True, **kwargs):
             kwargs.setdefault('status', Post.Status.PUBLISHED)
             kwargs.setdefault('published_at', _ONE_DAY_AGO)
-            return baker.make(Post, author=self._author, **kwargs)
+            baker_f = baker.make if _save else baker.prepare
+            return baker_f(Post, author=self._author, **kwargs)            
+        def create_draft(self, *, _save=True, **kwargs):
+            kwargs['status'] = Post.Status.DRAFT
+            kwargs['published_at'] = None
+            return self.create(_save=_save, **kwargs)
+        def create_hidden(self, *, _save=True, **kwargs):
+            kwargs['status'] = Post.Status.HIDDEN
+            return self.create(_save=_save, **kwargs)
     return _Factory(author)
-
-
-def _create_then_fetch(model_cls, **kwargs):
-    obj = baker.make(model_cls, **kwargs)
-    return model_cls.objects.get(pk=obj.pk)
 
 
 def _assert_is_now(dt):
@@ -116,93 +119,93 @@ def test_is_published(status, expected):
 #-- Post.save --#
 
 @pytest.mark.django_db
-def test_save__new_post__publish_immediately(author):
-    post = baker.prepare(Post, author=author, status=Post.Status.PUBLISHED, published_at=None)
+def test_save__new_post__publish_immediately(post_factory):
+    post = post_factory.create(published_at=None, _save=False)
     post.save()
     _assert_is_now(post.published_at)
 
 
 @pytest.mark.django_db
-def test_save__new_post__draft(author):
-    post = baker.prepare(Post, author=author, status=Post.Status.DRAFT, published_at=None)
+def test_save__new_post__draft(post_factory):
+    post = post_factory.create_draft(_save=False)
     post.save()
     assert post.published_at is None
 
 
 @pytest.mark.django_db
-def test_save__new_post__hidden(author):
-    post = baker.prepare(Post, author=author, status=Post.Status.HIDDEN, published_at=None)
+def test_save__new_post__hidden(post_factory):
+    post = post_factory.create_hidden(published_at=None, _save=False)
     post.save()
     assert post.published_at is None
 
 
 @pytest.mark.django_db
-def test_save__update__publish_ex_draft(author):
-    post = _create_then_fetch(Post, author=author, status=Post.Status.DRAFT, published_at=None)
+def test_save__update__publish_ex_draft(post_factory):
+    post = post_factory.create_draft()
     post.status = Post.Status.PUBLISHED
     post.save()
     _assert_is_now(post.published_at)
 
 
 @pytest.mark.django_db
-def test_save__update__hide_ex_draft(author):
-    post = _create_then_fetch(Post, author=author, status=Post.Status.DRAFT, published_at=_ONE_DAY_AGO)
+def test_save__update__hide_ex_draft(post_factory):
+    post = post_factory.create_draft()
     post.status = Post.Status.HIDDEN
     post.save()
     assert post.published_at is None
 
 
 @pytest.mark.django_db
-def test_save__update__unpublish(author):
-    post = _create_then_fetch(Post, author=author, status=Post.Status.PUBLISHED, published_at=_ONE_DAY_AGO)
+def test_save__update__unpublish(post_factory):
+    post = post_factory.create()
     post.status = Post.Status.DRAFT
     post.save()
     assert post.published_at is None
 
 
 @pytest.mark.django_db
-def test_save__update__hide(author):
-    post = _create_then_fetch(Post, author=author, status=Post.Status.PUBLISHED, published_at=_ONE_DAY_AGO)
+def test_save__update__hide(post_factory):
+    post = post_factory.create()
     post.status = Post.Status.HIDDEN
     post.save()
     assert post.published_at == _ONE_DAY_AGO
 
 
 @pytest.mark.django_db
-def test_save__update__unhide(author):
-    post = _create_then_fetch(Post, author=author, status=Post.Status.HIDDEN, published_at=_ONE_DAY_AGO)
+def test_save__update__unhide(post_factory):
+    post = post_factory.create_hidden()
     post.status = Post.Status.PUBLISHED
     post.save()
     assert post.published_at == _ONE_DAY_AGO
 
 
 @pytest.mark.django_db
-def test_save__update__make_draft_ex_hidden(author):
-    post = _create_then_fetch(Post, author=author, status=Post.Status.HIDDEN, published_at=_ONE_DAY_AGO)
+def test_save__update__make_draft_ex_hidden(post_factory):
+    post = post_factory.create_hidden()
     post.status = Post.Status.DRAFT
     post.save()
     assert post.published_at is None
 
 
 @pytest.mark.django_db
-def test_save__update__keep_draft(author):
-    post = _create_then_fetch(Post, author=author, status=Post.Status.DRAFT, published_at=None)
+def test_save__update__keep_draft(post_factory):
+    post = post_factory.create_draft()
     post.title = 'New, improved title'
     post.save()
     assert post.published_at is None
 
 
 @pytest.mark.django_db
-def test_save__update__keep_published(author):
-    post = _create_then_fetch(Post, author=author, status=Post.Status.PUBLISHED, published_at=_ONE_DAY_AGO)
+def test_save__update__keep_published(post_factory):
+    post = post_factory.create()
     post.title = 'New, improved title'
     post.save()
     assert post.published_at == _ONE_DAY_AGO
 
 
 @pytest.mark.django_db
-def test_save__update__keep_hidden(author):
-    post = _create_then_fetch(Post, author=author, status=Post.Status.HIDDEN, published_at=_ONE_DAY_AGO)
+def test_save__update__keep_hidden(post_factory):
+    post = post_factory.create_hidden()
     post.title = 'New, improved title'
     post.save()
     assert post.published_at == _ONE_DAY_AGO
