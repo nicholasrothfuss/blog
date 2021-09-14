@@ -57,7 +57,6 @@ class Post(models.Model):
             kwargs={
                 'year': self.published_at.strftime('%Y'),
                 'month': self.published_at.strftime('%m'),
-                'day': self.published_at.strftime('%d'),
                 'slug': self.slug,
             }
         )
