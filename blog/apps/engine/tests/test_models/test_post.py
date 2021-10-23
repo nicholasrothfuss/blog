@@ -1,16 +1,31 @@
-from model_bakery import baker
 import pytest
-from ..utils import assert_is_now, ONE_DAY_AGO
+from ..utils import assert_is_now, tz_datetime, ONE_DAY_AGO
 from ...models import Post
 
 
 #-- Field options --#
 
+def test_status_default():
+    assert Post().status == Post.Status.DRAFT
+    
+
 @pytest.mark.django_db
-def test_updated_at_auto_now(author):
-    post = baker.prepare(Post, author=author, updated_at=ONE_DAY_AGO)
+def test_updated_at_auto_now(post_factory):
+    post = post_factory.create(updated_at=ONE_DAY_AGO)
     post.save()
     assert_is_now(post.updated_at)
+
+
+#-- Meta options --#
+
+@pytest.mark.django_db
+def test_default_ordering(post_factory):
+    p1 = post_factory.create(published_at=tz_datetime(2021, 6, 5, 13))
+    p2 = post_factory.create(published_at=tz_datetime(2021, 5, 3))
+    p3 = post_factory.create(published_at=tz_datetime(2021, 6, 5, 15))
+    p4 = post_factory.create(published_at=tz_datetime(2021, 5, 18))
+
+    assert list(Post.objects.all()) == [p3, p1, p4, p2]
 
 
 #-- __str__() --#
@@ -19,6 +34,17 @@ def test_str():
     title = 'A rather dull title, dude'
     post = Post(title=title)
     assert str(post) == title
+
+
+#-- get_absolute_url() --#
+
+def test_get_absolute_url_published():
+    post = Post(
+        status=Post.Status.PUBLISHED, 
+        slug='foo-bar', 
+        published_at=tz_datetime(2020, 6, 5, 13)
+    )
+    assert post.get_absolute_url() == '/2020/06/foo-bar/'
 
 
 #-- is_draft --#
