@@ -1,0 +1,22 @@
+{% for post in posts %}
+    <div class="post">
+        <{{ header_tag }}>{{ post.title }}</{{ header_tag}}>
+        {{ post.content|linebreaks }}
+        {% if list_categories %}
+            <div>
+                Posted in 
+                {% for category in post.categories.all %}
+                    <a href="{{ category.get_absolute_url }}">{{ category }}</a>
+                {% empty %}
+                    Uncategorized
+                {% endfor %}
+            </div>
+        {% endif %}
+        <div>
+            Posted on {{ post.published_at|date:"F j, Y" }} at {{ post.published_at|time:"g:i A" }}
+            {% if include_permalink %}
+                | <a href="{{ post.get_absolute_url }}">Permalink</a>
+            {% endif %}
+        </div>
+    </div>
+{% endfor %}

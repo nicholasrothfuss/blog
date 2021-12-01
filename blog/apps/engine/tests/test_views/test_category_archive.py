@@ -1,7 +1,13 @@
 from model_bakery import baker
 import pytest
 from pytest_django.asserts import assertTemplateUsed
-from ..utils import tz_datetime
+
+from ..utils import (
+    assert_contains_post_title, 
+    assert_contains_post_permalinks,
+    assert_not_contains_post_categories, 
+    tz_datetime
+)
 from ...models import Category
 
 
@@ -9,11 +15,20 @@ from ...models import Category
 
 @pytest.mark.django_db
 def test_single_published_post_with_one_category(client, post_factory):
-    category = baker.make(Category)
-    post_factory.create(categories=[category])
+    category = baker.make(Category, name='Python')
+    post = post_factory.create(
+        title='Using Django', 
+        slug='using-django',
+        categories=[category], 
+        published_at=tz_datetime(2021, 6, 5)
+    )
     response = client.get(category.get_absolute_url())
     assert response.status_code == 200
     assertTemplateUsed(response, 'category_archive.html')
+
+    assert_contains_post_title(response, 'Using Django')
+    assert_contains_post_permalinks(response, post.get_absolute_url())
+    assert_not_contains_post_categories(response)
 
 
 @pytest.mark.django_db

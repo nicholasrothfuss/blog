@@ -1,3 +1,4 @@
+from datetime import date
 import pytest
 from ..utils import tz_datetime
 from ...models import Post, PostQuerySet
@@ -48,3 +49,20 @@ def test_published_all_published_filtered_out(post_factory):
 
     qs = PostQuerySet(Post).filter(published_at__lt=tz_datetime(2019, 1, 1))
     assert list(qs.published()) == []
+
+
+#-- published_months() -- #
+
+@pytest.mark.django_db
+def test_published_months(post_factory):
+    post_factory.create(published_at=tz_datetime(2020, 6, 5, 13))
+    post_factory.create(published_at=tz_datetime(2021, 5, 3))
+    post_factory.create(published_at=tz_datetime(2021, 8, 5, 15))
+    post_factory.create(published_at=tz_datetime(2021, 5, 18))
+    post_factory.create_draft()
+    post_factory.create_hidden(published_at=tz_datetime(2020, 9, 6))
+
+    qs = PostQuerySet(Post)
+    assert list(qs.published_months()) == [
+        date(2021, 8, 1), date(2021, 5, 1), date(2020, 6, 1)
+    ]

@@ -1,10 +1,8 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>{{ post.title }}</title>
-</head>
-<body>
-    <h1>{{ post.title }}</h2>
-    {{ post.content|linebreaks }}
-</body>
-</html>
+{% extends "layout.html" %}
+{% load blogtools %}
+
+{% block title %}{{ post.title }} :: {{ block.super }}{% endblock %}
+
+{% block content %} 
+    {% render_posts post header_tag='h1' include_permalink=False %}
+{% endblock %}

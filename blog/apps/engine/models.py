@@ -4,9 +4,16 @@ from django.urls import reverse
 from django.utils import timezone
 
 
+class CategoryQuerySet(models.QuerySet):
+    def has_published_posts(self):
+        return self.filter(posts__status=Post.Status.PUBLISHED).distinct()
+
+
 class Category(models.Model):
     name = models.CharField(max_length=200, unique=True)
     slug = models.SlugField(unique=True)
+
+    objects = CategoryQuerySet.as_manager()
 
     class Meta:
         ordering = ('name',)
@@ -22,6 +29,9 @@ class Category(models.Model):
 class PostQuerySet(models.QuerySet):
     def published(self):
         return self.filter(status=Post.Status.PUBLISHED)
+
+    def published_months(self):
+        return self.published().dates('published_at', 'month', order='DESC')
 
 
 class Post(models.Model):
